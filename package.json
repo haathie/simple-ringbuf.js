@@ -22,8 +22,8 @@
   "types": "./dist/index.d.cts",
   "sideEffects": false,
   "engines": {
-    "node": ">=18",
-    "npm": ">=9"
+    "node": ">=14",
+    "npm": ">=6"
   },
   "keywords": [
     "ring buffer",
