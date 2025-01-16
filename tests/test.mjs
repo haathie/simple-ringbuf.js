@@ -2,7 +2,7 @@
 import { test } from "uvu";
 import * as assert from "uvu/assert";
 import { RingBuffer, interleave, deinterleave } from "../dist/index.mjs";
-import { Worker } from "worker_threads";
+import { Worker } from "node:worker_threads";
 import {
   SequenceGenerator,
   SequenceVerifier,
@@ -43,11 +43,11 @@ test("linearized symmetrical push/pop", () => {
 });
 
 function checkNoCanaryTouched(array) {
-  for (var i = 2; i < array.length - 4; i++) {
-    assert.is.not(array[i] == Infinity, `Input canary found in output array at index ${i}`);
+  for (let i = 2; i < array.length - 4; i++) {
+    assert.is.not(array[i] === Number.POSITIVE_INFINITY, `Input canary found in output array at index ${i}`);
   }
-  assert.ok(Number.isNaN(array[0]), `Output canary overwritten at index 0`);
-  assert.ok(Number.isNaN(array[1]), `Output canary overwritten at index 1`);
+  assert.ok(Number.isNaN(array[0]), "Output canary overwritten at index 0");
+  assert.ok(Number.isNaN(array[1]), "Output canary overwritten at index 1");
   assert.ok(Number.isNaN(array[array.length - 1]), `Output canary overwritten at index ${array.length - 1}`);
   assert.ok(Number.isNaN(array[array.length - 2]), `Output canary overwritten at index ${array.length - 2}`);
 }
@@ -72,7 +72,7 @@ test("linearized symmetrical push/pop w/ offset", () => {
     // Surrounding the data, are 2 Infinity on each side in the input array, 2
     // NaN on each side in the output array. This test checks that they are not
     // overwritten.
-    toPush[0] = toPush[1] = toPush[toPush.length - 1] = toPush[toPush.length - 2] = Infinity;
+    toPush[0] = toPush[1] = toPush[toPush.length - 1] = toPush[toPush.length - 2] = Number.POSITIVE_INFINITY;
     toPop[0] = toPop[1] = toPop[toPop.length - 1] = toPop[toPop.length - 2] = Number.NaN;
     const generator = new SequenceGenerator();
     const verifier = new SequenceVerifier();
@@ -157,7 +157,7 @@ test("linarized asymmetrical writeCallback/pop", () => {
     while (step--) {
       const to_write = Math.min(rb.available_write(), toPush.length);
       external_length += to_write;
-      rb.writeCallback(to_write, function(first, second) {
+      rb.writeCallback(to_write, (first, second) => {
         generator.fill(first, first.length);
         generator.fill(second, second.length);
       });
@@ -198,7 +198,7 @@ test("linarized asymmetrical writeCallbackWithOffset/pop", () => {
     while (step--) {
       const to_write = Math.min(rb.available_write(), toPush.length);
       external_length += to_write;
-      rb.writeCallbackWithOffset(to_write, function(buf, first_offset, first_len, second_offset, second_len) {
+      rb.writeCallbackWithOffset(to_write, (buf, first_offset, first_len, second_offset, second_len) => {
         generator.fill(buf, first_len, first_offset);
         generator.fill(buf, second_len, second_offset);
       });
@@ -225,7 +225,7 @@ test("linearized asymmetrical random push/pop", () => {
     console.info(
       `Starting iteration ${
         iterationsTotal - iteration
-      } of ${iterationsTotal} ` + desc);
+      } of ${iterationsTotal} ${desc}`);
     const storage = RingBuffer.getStorageForCapacity(arraySize, Uint32Array);
     const rb = new RingBuffer(storage, Uint32Array);
     assert.ok(rb.empty() && !rb.full());
@@ -237,7 +237,7 @@ test("linearized asymmetrical random push/pop", () => {
     let step = Math.round((arraySize * 100) / maxPushSize);
     let external_length = 0;
     while (step--) {
-      const stepStr = desc + `(${step})`;
+      const stepStr = `${desc}(${step})`;
       const max_to_write = Math.min(rb.available_write(), toPush.length);
       const to_write = rng.randomInt(max_to_write);
       generator.fill(toPush, to_write);
@@ -312,9 +312,9 @@ test("SPSC asymmetrical random push/pop", async () => {
 });
 
 test("Test interleave / deinterleave", async () => {
-  for (var channels = 1; channels <= 8; channels++) {
-  let input = Array.from(Array(128 * channels).keys());
-  let output = [];
+  for (let channels = 1; channels <= 8; channels++) {
+  const input = Array.from(Array(128 * channels).keys());
+  const output = [];
   for (let i = 0; i < channels; i++) {
     output.push(new Array(128));
   }
@@ -328,7 +328,7 @@ test("Test interleave / deinterleave", async () => {
     }
   }
 
-  let roundtrip = new Array(128 * channels);
+  const roundtrip = new Array(128 * channels);
   interleave(output, roundtrip);
 
   for (let i = 0; i < roundtrip.length; i++) {

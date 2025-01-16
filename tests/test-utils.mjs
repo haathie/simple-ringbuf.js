@@ -4,7 +4,7 @@ class SeededPRNG {
   constructor(seed = 11 /* 11 sounds good */) {
     /* seedable good enough prng */
     function mulberry32(a) {
-      return function () {
+      return () => {
         let t = (a += 0x6d2b79f5);
         t = Math.imul(t ^ (t >>> 15), t | 1);
         t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
@@ -36,9 +36,9 @@ class SequenceGenerator {
     if (offset + elementCount > array.length) {
       throw `Attempting to enqueue ${elementCount} at ${offset} in an array of size ${array.length}`;
     }
-    const len = offset == 0 ? elementCount : offset + elementCount;
+    const len = offset === 0 ? elementCount : offset + elementCount;
     for (let i = offset; i < len; i++) {
-      var next = this.next();
+      const next = this.next();
       array[i] = next;
     }
   }
@@ -53,11 +53,11 @@ class SequenceVerifier {
     this.index = 0;
   }
   check(toCheck, elementCount = toCheck.length, offset = 0) {
-    if (typeof toCheck === Number) {
+    if (typeof toCheck === "number") {
       assert.equal(this.index, toCheck);
       this.index++;
     } else if (toCheck.length !== undefined) {
-      const len = offset == 0 ? elementCount : offset + elementCount;
+      const len = offset === 0 ? elementCount : offset + elementCount;
       for (let i = offset; i < len; i++) {
         assert.equal(this.index, toCheck[i], i);
         this.index++;

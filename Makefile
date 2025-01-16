@@ -1,13 +1,13 @@
 all: doc build
 
-doc: js/audioqueue.js js/index.js js/param.js js/param.js
-	node node_modules/jsdoc/jsdoc.js js -d public/doc -R README.md
+doc: src/audioqueue.ts src/index.ts src/param.ts src/ringbuf.ts
+	node node_modules/typedoc/bin/typedoc --out public/doc --readme README.md src/**/*.ts
 
 build:
-	npm run-script build
+	npm run build
 
 check: build
 	node tests/test.mjs
 
 lint:
-	npm run-script lint
+	npm run lint

@@ -1,7 +1,9 @@
+import type { RingBuffer } from "./ringbuf";
+
 /**
  * Send parameter changes, lock free, no gc, between a UI thread (browser
  * main thread or worker) and a real-time thread (in an AudioWorkletProcessor).
- * Write and Reader cannot change role after setup, unless externally
+ * Write and Reader cannot change roles after setup, unless externally
  * synchronized.
  *
  * GC _can_ happen during the initial construction of this object when hopefully
@@ -17,15 +19,19 @@
  * bytes.
  */
 export class ParameterWriter {
+  private ringbuf: RingBuffer;
+  private mem: ArrayBuffer;
+  private array: Uint8Array;
+  private view: DataView;
+
   /**
    * From a RingBuffer, build an object that can enqueue a parameter change in
    * the queue.
-   * @param {RingBuffer} ringbuf A RingBuffer object of Uint8Array.
-   * @constructor
+   * @param ringbuf A RingBuffer object of Uint8Array.
    */
-  constructor(ringbuf) {
+  constructor(ringbuf: RingBuffer) {
     if (ringbuf.type() !== "Uint8Array") {
-      throw TypeError("This class requires a ring buffer of Uint8Array");
+      throw new TypeError("This class requires a ring buffer of Uint8Array");
     }
     const SIZE_ELEMENT = 5;
     this.ringbuf = ringbuf;
@@ -33,21 +39,22 @@ export class ParameterWriter {
     this.array = new Uint8Array(this.mem);
     this.view = new DataView(this.mem);
   }
-  /*
+
+  /**
    * Enqueue a parameter change for parameter of index `index`, with a new value
    * of `value`.
    *
-   * @param {number} index The index of the parameter.
-   * @param {number} value The value of the parameter.
-   * @return True if enqueuing suceeded, false otherwise.
+   * @param index The index of the parameter.
+   * @param value The value of the parameter.
+   * @return True if enqueuing succeeded, false otherwise.
    */
-  enqueue_change(index, value) {
+  enqueue_change(index: number, value: number): boolean {
     const SIZE_ELEMENT = 5;
-    if (this.ringbuf.available_write() < SIZE_ELEMENT) {
+    if (this.ringbuf.availableWrite() < SIZE_ELEMENT) {
       return false;
     }
     this.view.setUint8(0, index);
-    this.view.setFloat32(1, value);
+    this.view.setFloat32(1, value); 
     return this.ringbuf.push(this.array) === SIZE_ELEMENT;
   }
 }
@@ -55,7 +62,7 @@ export class ParameterWriter {
 /**
  * Receive parameter changes, lock free, no gc, between a UI thread (browser
  * main thread or worker) and a real-time thread (in an AudioWorkletProcessor).
- * Write and Reader cannot change role after setup, unless externally
+ * Write and Reader cannot change roles after setup, unless externally
  * synchronized.
  *
  * GC _can_ happen during the initial construction of this object when hopefully
@@ -71,23 +78,28 @@ export class ParameterWriter {
  * bytes.
  */
 export class ParameterReader {
+  private ringbuf: RingBuffer;
+  private mem: ArrayBuffer;
+  private array: Uint8Array;
+  private view: DataView;
+
   /**
-   * @constructor
-   * @param {RingBuffer} ringbuf A RingBuffer setup to hold Uint8.
+   * @param ringbuf A RingBuffer setup to hold Uint8.
    */
-  constructor(ringbuf) {
+  constructor(ringbuf: RingBuffer) {
     const SIZE_ELEMENT = 5;
     this.ringbuf = ringbuf;
     this.mem = new ArrayBuffer(SIZE_ELEMENT);
     this.array = new Uint8Array(this.mem);
     this.view = new DataView(this.mem);
   }
+
   /**
    * Attempt to dequeue a single parameter change.
-   * @param {Object} o An object with two attributes: `index` and `value`.
+   * @param o An object with two attributes: `index` and `value`.
    * @return true if a parameter change has been dequeued, false otherwise.
    */
-  dequeue_change(o) {
+  dequeue_change(o: { index: number; value: number }): boolean {
     if (this.ringbuf.empty()) {
       return false;
     }

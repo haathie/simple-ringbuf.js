@@ -9,11 +9,11 @@ and some utilities.
 
 The main files of this library:
 
-- `js/ringbuf.js`: base data structure, implementing the ring-buffer. This is
+- `src/ringbuf.ts`: base data structure, implementing the ring-buffer. This is
   intentionally heavily commented.
-- `js/audioqueue.js`: wrapper for audio data streaming, without using
+- `src/audioqueue.ts`: wrapper for audio data streaming, without using
   `postMessage`.
-- `js/param.js`: wrapper for parameter changes, allowing to send pairs of index
+- `src/param.ts`: wrapper for parameter changes, allowing to send pairs of index
   and value without using `postMessage`.
 
 ## Examples and use-cases
@@ -49,7 +49,7 @@ to (from) a non-real-time thread is useful:
 
 ## Run locally
 
-> `cd public; node ../server.js`
+> `cd public; node ../server.mjs`
 
 This is a simple web server that sets the right headers to use
 `SharedArrayBuffer` (see [Planned changes to shared memory
@@ -67,6 +67,18 @@ allows running the build step and copying the file to allow the example to work.
 > make doc
 
 allows rebuilding the documentation.
+
+## Performance Benchmarks
+
+As of version `0.4.0`, the whole codebase has been ported to TypeScript,  tooling has been modernized and dependencies were updated. The pakcage is now also marked as side-effect free, which allows bundlers to tree-shake the code for unused symbols when imported. 
+
+Alongside these updates, two performance optimizations were introduced:
+
+- `_copy` has been optimized by a loop factor of 16. [`bench`](bench/deinterleave-bench.html)
+- `deinterleave` has been optimized by a loop unroll factor of 4. [`bench`](bench/copy-bench.html)
+
+Early, and limited test results have shown
+a substantial performance improvement in buffer copying by **~325%**. For ongoing monitoring in engine behaviour, benchmarks have been added for independent verification of the results. 
 
 ## Compatibility
 

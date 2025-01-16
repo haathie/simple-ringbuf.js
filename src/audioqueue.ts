@@ -1,3 +1,5 @@
+import type { RingBuffer } from "./ringbuf.ts";
+
 /**
  * Interleaved -> Planar audio buffer conversion
  *
@@ -5,23 +7,44 @@
  * interleaved, into a planar format, for example a Web Audio API AudioBuffer or
  * the output parameter of an AudioWorkletProcessor.
  *
- * @param {Float32Array} input is an array of n*128 frames arrays, interleaved,
+ * @param input is an array of n*128 frames arrays, interleaved,
  * where n is the channel count.
- * @param {Float32Array} output is an array of 128-frames arrays.
+ * @param output is an array of 128-frames arrays.
  */
-export function deinterleave(input, output) {
+export function deinterleave(input: Float32Array, output: Float32Array[]): void {
   const channel_count = input.length / 128;
   if (output.length !== channel_count) {
-    throw RangeError(
+    throw new RangeError(
       `not enough space in output arrays ${output.length} != ${channel_count}`,
     );
   }
+
+  /* Original algorithm:
+    
+    for (let i = 0; i < channel_count; i++) {
+      const out_channel = output[i];
+      let interleaved_idx = i;
+      for (let j = 0; j < 128; ++j) {
+        out_channel[j] = input[interleaved_idx];
+        interleaved_idx += channel_count;
+      }
+    }
+
+    Optimized algorithm:
+  */
+
   for (let i = 0; i < channel_count; i++) {
     const out_channel = output[i];
     let interleaved_idx = i;
-    for (let j = 0; j < 128; ++j) {
+
+    // Unroll the inner loop by processing 4 samples at a time
+    // Best unroll factor in 2025 for this is 4: https://github.com/padenot/ringbuf.js/issues/22#issuecomment-2591073674
+    for (let j = 0; j < 128; j += 4) {
       out_channel[j] = input[interleaved_idx];
-      interleaved_idx += channel_count;
+      out_channel[j + 1] = input[interleaved_idx + channel_count];
+      out_channel[j + 2] = input[interleaved_idx + 2 * channel_count];
+      out_channel[j + 3] = input[interleaved_idx + 3 * channel_count];
+      interleaved_idx += 4 * channel_count;
     }
   }
 }
@@ -33,13 +56,16 @@ export function deinterleave(input, output) {
  * planar format), into something that a codec or network streaming library
  * would expect.
  *
- * @param {Float32Array} input An array of n*128 frames Float32Array that hold the audio data.
- * @param {Float32Array} output A Float32Array that is n*128 elements long.
+ * @param input An array of n*128 frames Float32Array that hold the audio data.
+ * @param output A Float32Array that is n*128 elements long.
  */
-export function interleave(input, output) {
+export function interleave(input: Float32Array[], output: Float32Array): void {
   if (input.length * 128 !== output.length) {
-    throw RangeError("input and output of incompatible sizes");
+    throw new RangeError("input and output of incompatible sizes");
   }
+
+  // this algo, as of 2025 does not benefit from loop unrolling
+  // https://github.com/padenot/ringbuf.js/issues/22#issuecomment-2591103602
   let out_idx = 0;
   for (let i = 0; i < 128; i++) {
     for (let channel = 0; channel < input.length; channel++) {
@@ -62,40 +88,48 @@ export function interleave(input, output) {
  * passes. After the setup phase no GC is triggered on either side of the queue.
  */
 export class AudioWriter {
+  private ringbuf: RingBuffer;
+
   /**
    * From a RingBuffer, build an object that can enqueue enqueue audio in a ring
    * buffer.
-   * @constructor
    */
-  constructor(ringbuf) {
+  constructor(ringbuf: RingBuffer) {
     if (ringbuf.type() !== "Float32Array") {
-      throw TypeError("This class requires a ring buffer of Float32Array");
+      throw new TypeError("This class requires a ring buffer of Float32Array");
     }
     this.ringbuf = ringbuf;
   }
+
   /**
    * Enqueue a buffer of interleaved audio into the ring buffer.
-   *
    *
    * Care should be taken to enqueue a number of samples that is a multiple of the
    * channel count of the audio stream.
    *
-   * @param {Float32Array} buf An array of interleaved audio frames.
+   * @param buf An array of interleaved audio frames.
    *
-   * @return The number of samples that have been successfuly written to the
+   * @return The number of samples that have been successfully written to the
    * queue. `buf` is not written to during this call, so the samples that
    * haven't been written to the queue are still available.
    */
-  enqueue(buf) {
+  enqueue(buf: Float32Array): number {
     return this.ringbuf.push(buf);
+  }
+
+  /**
+   * @deprecated Use availableWrite() instead. This method is deprecated and will be removed in future versions.
+   */
+  available_write(): number {
+    return this.availableWrite();
   }
 
   /**
    * @return The free space in the ring buffer. This is the amount of samples
    * that can be queued, with a guarantee of success.
    */
-  available_write() {
-    return this.ringbuf.available_write();
+  availableWrite(): number {
+    return this.ringbuf.availableWrite();
   }
 }
 
@@ -107,17 +141,19 @@ export class AudioWriter {
  * passes. After the setup phase no GC is triggered on either side of the queue.
  */
 export class AudioReader {
+  private ringbuf: RingBuffer;
+
   /**
    * From a RingBuffer, build an object that can dequeue audio in a ring
    * buffer.
-   * @constructor
    */
-  constructor(ringbuf) {
+  constructor(ringbuf: RingBuffer) {
     if (ringbuf.type() !== "Float32Array") {
-      throw TypeError("This class requires a ring buffer of Float32Array");
+      throw new TypeError("This class requires a ring buffer of Float32Array");
     }
     this.ringbuf = ringbuf;
   }
+
   /**
    * Attempt to dequeue at most `buf.length` samples from the queue. This
    * returns the number of samples dequeued. If greater than 0, the samples are
@@ -126,23 +162,30 @@ export class AudioReader {
    * Care should be taken to dequeue a number of samples that is a multiple of the
    * channel count of the audio stream.
    *
-   * @param {Float32Array} buf A buffer in which to copy the dequeued
+   * @param buf A buffer in which to copy the dequeued
    * interleaved audio frames.
    * @return The number of samples dequeued.
    */
-  dequeue(buf) {
+  dequeue(buf: Float32Array): number {
     if (this.ringbuf.empty()) {
       return 0;
     }
     return this.ringbuf.pop(buf);
   }
+
+  /**
+   * @deprecated Use availableRead() instead. This method is deprecated and will be removed in future versions.
+   */
+  available_read(): number {
+    return this.availableRead();
+  }
+
   /**
    * Query the occupied space in the queue.
    *
    * @return The amount of samples that can be read with a guarantee of success.
-   *
    */
-  available_read() {
-    return this.ringbuf.available_read();
+  availableRead(): number {
+    return this.ringbuf.availableRead();
   }
 }

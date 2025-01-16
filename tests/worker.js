@@ -1,5 +1,5 @@
 const ringbuf = require("../dist/index.js");
-const { parentPort } = require("worker_threads");
+const { parentPort } = require("node:worker_threads");
 
 import("./test-utils.mjs").then((mod) => {
   parentPort.postMessage("ok");
