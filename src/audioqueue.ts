@@ -11,7 +11,10 @@ import type { RingBuffer } from "./ringbuf.ts";
  * where n is the channel count.
  * @param output is an array of 128-frames arrays.
  */
-export function deinterleave(input: Float32Array, output: Float32Array[]): void {
+export function deinterleave(
+  input: Float32Array,
+  output: Float32Array[],
+): void {
   const channel_count = input.length / 128;
   if (output.length !== channel_count) {
     throw new RangeError(
@@ -20,7 +23,7 @@ export function deinterleave(input: Float32Array, output: Float32Array[]): void 
   }
 
   /* Original algorithm:
-    
+
     for (let i = 0; i < channel_count; i++) {
       const out_channel = output[i];
       let interleaved_idx = i;

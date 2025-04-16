@@ -70,15 +70,21 @@ allows rebuilding the documentation.
 
 ## Performance Benchmarks
 
-As of version `0.4.0`, the whole codebase has been ported to TypeScript,  tooling has been modernized and dependencies were updated. The pakcage is now also marked as side-effect free, which allows bundlers to tree-shake the code for unused symbols when imported. 
+As of version `0.4.0`, the whole codebase has been ported to TypeScript, tooling
+has been modernized and dependencies were updated. The package is now also
+marked as side-effect free, which allows bundlers to tree-shake the code for
+unused symbols when imported.
 
 Alongside these updates, two performance optimizations were introduced:
 
-- `_copy` has been optimized by a loop factor of 16. [`bench`](bench/deinterleave-bench.html)
-- `deinterleave` has been optimized by a loop unroll factor of 4. [`bench`](bench/copy-bench.html)
+- `_copy` has been optimized by a loop factor of 16.
+[`bench`](bench/deinterleave-bench.html)
+- `deinterleave` has been optimized by unrolling the loop with a factor of 4.
+[`bench`](bench/copy-bench.html)
 
-Early, and limited test results have shown
-a substantial performance improvement in buffer copying by **~325%**. For ongoing monitoring in engine behaviour, benchmarks have been added for independent verification of the results. 
+Early, and limited test results have shown a substantial performance improvement
+in buffer copying by **~325%**. For ongoing monitoring in engine behaviour,
+benchmarks have been added for independent verification of the results.
 
 ## Compatibility
 
@@ -97,7 +103,7 @@ As of 2023-05-25, the following browsers are compatible:
 - Chrome Desktop and Chromium-based browsers (for a long time)
 - Chrome for Android
 - Safari
- 
+
 ## License
 
 Mozilla Public License 2.0

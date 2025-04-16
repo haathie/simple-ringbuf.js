@@ -48,14 +48,28 @@ export class ParameterWriter {
    * @param value The value of the parameter.
    * @return True if enqueuing succeeded, false otherwise.
    */
-  enqueue_change(index: number, value: number): boolean {
+  enqueueChange(index: number, value: number): boolean {
     const SIZE_ELEMENT = 5;
     if (this.ringbuf.availableWrite() < SIZE_ELEMENT) {
       return false;
     }
     this.view.setUint8(0, index);
-    this.view.setFloat32(1, value); 
+    this.view.setFloat32(1, value);
     return this.ringbuf.push(this.array) === SIZE_ELEMENT;
+  }
+
+  /**
+   * Enqueue a parameter change for parameter of index `index`, with a new value
+   * of `value`.
+   *
+   * @param index The index of the parameter.
+   * @param value The value of the parameter.
+   * @return True if enqueuing succeeded, false otherwise.
+   *
+   * @deprecated
+   */
+  enqueue_change(index: number, value: number): boolean {
+    return this.enqueueChange(index, value);
   }
 }
 
@@ -99,7 +113,7 @@ export class ParameterReader {
    * @param o An object with two attributes: `index` and `value`.
    * @return true if a parameter change has been dequeued, false otherwise.
    */
-  dequeue_change(o: { index: number; value: number }): boolean {
+  dequeueChange(o: { index: number; value: number }): boolean {
     if (this.ringbuf.empty()) {
       return false;
     }
@@ -108,5 +122,16 @@ export class ParameterReader {
     o.value = this.view.getFloat32(1);
 
     return rv === this.array.length;
+  }
+
+  /**
+   * Attempt to dequeue a single parameter change.
+   * @param o An object with two attributes: `index` and `value`.
+   * @return true if a parameter change has been dequeued, false otherwise.
+   *
+   * @deprecated
+   */
+  dequeue_change(o: { index: number; value: number }): boolean {
+    return this.dequeueChange(o);
   }
 }

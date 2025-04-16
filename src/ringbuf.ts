@@ -1,6 +1,11 @@
-import type { RingBufferWriteCallback, RingBufferWriteCallbackWithOffset, TypedArray, TypedArrayConstructor } from "./types";
+import type {
+  RingBufferWriteCallback,
+  RingBufferWriteCallbackWithOffset,
+  TypedArray,
+  TypedArrayConstructor,
+} from "./types";
 
-/** 
+/**
  * The base RingBuffer class
  *
  * A Single Producer - Single Consumer thread-safe wait-free ring buffer.
@@ -9,7 +14,6 @@ import type { RingBufferWriteCallback, RingBufferWriteCallbackWithOffset, TypedA
  * except with external synchronization.
  */
 export class RingBuffer {
-
   /** Allocate the SharedArrayBuffer for a RingBuffer, based on the type and
    * capacity required
    * @param capacity The number of elements the ring buffer will be
@@ -18,7 +22,10 @@ export class RingBuffer {
    * buffer will hold.
    * @return A SharedArrayBuffer of the right size.
    */
-  static getStorageForCapacity(capacity: number, type: TypedArrayConstructor): SharedArrayBuffer {
+  static getStorageForCapacity(
+    capacity: number,
+    type: TypedArrayConstructor,
+  ): SharedArrayBuffer {
     if (!type.BYTES_PER_ELEMENT) {
       throw TypeError("Pass in an ArrayBuffer subclass");
     }
@@ -80,7 +87,7 @@ export class RingBuffer {
 
     if ((wr + 1) % this._storage_capacity() === rd) {
       // full
-      return 0; 
+      return 0;
     }
 
     const len = length !== undefined ? length : elements.length;
@@ -94,9 +101,9 @@ export class RingBuffer {
 
     // publish the enqueued data to the other side
     Atomics.store(
-      this.write_ptr, 
-      0, 
-      (wr + to_write) % this._storage_capacity()
+      this.write_ptr,
+      0,
+      (wr + to_write) % this._storage_capacity(),
     );
 
     return to_write;
@@ -179,7 +186,10 @@ export class RingBuffer {
    * been written started at the beginning of the requested buffer space.
    * @return The number of elements written to the queue.
    */
-  writeCallbackWithOffset(amount: number, cb: RingBufferWriteCallbackWithOffset) {
+  writeCallbackWithOffset(
+    amount: number,
+    cb: RingBufferWriteCallbackWithOffset,
+  ) {
     const rd = Atomics.load(this.read_ptr, 0);
     const wr = Atomics.load(this.write_ptr, 0);
 
@@ -233,7 +243,7 @@ export class RingBuffer {
     this._copy(this.storage, 0, elements, offset + first_part, second_part);
 
     Atomics.store(this.read_ptr, 0, (rd + to_read) % this._storage_capacity());
-    
+
     return to_read;
   }
 
@@ -292,7 +302,7 @@ export class RingBuffer {
     return this.availableRead();
   }
 
- /**
+  /**
    * @return The number of elements available for writing. This can be late, and
    * report less elements that is actually available for writing, when something
    * has just been dequeued.
@@ -360,9 +370,8 @@ export class RingBuffer {
     offset_input: number,
     output: TypedArray,
     offset_output: number,
-    size: number
+    size: number,
   ): void {
-
     if (!size) {
       return;
     }
