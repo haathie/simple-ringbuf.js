@@ -1,109 +1,96 @@
-# `ringbuf.js`
+# `simple-ringbuf.js`
 
-[![test](https://github.com/padenot/ringbuf.js/actions/workflows/test.yml/badge.svg)](https://github.com/padenot/ringbuf.js/actions/workflows/test.yml)
-[![npm](https://img.shields.io/npm/v/ringbuf.js)](https://www.npmjs.com/package/ringbuf.js)
+A small, single-threaded typed-array ring buffer for JavaScript.
 
+This project is a simplified fork of [`ringbuf.js`](https://github.com/padenot/ringbuf.js) by Paul Adenot. The original project provides a wait-free, thread-safe `SharedArrayBuffer` ring buffer and related Web Audio utilities. This fork intentionally removes that scope.
 
-A thread-safe wait-free single-consumer single-producer ring buffer for the web,
-and some utilities.
+`simple-ringbuf.js` is **not thread-safe**. It uses `ArrayBuffer`, not `SharedArrayBuffer`, and is intended for single-threaded FIFO buffering.
 
-The main files of this library:
+## Install
 
-- `src/ringbuf.ts`: base data structure, implementing the ring-buffer. This is
-  intentionally heavily commented.
-- `src/audioqueue.ts`: wrapper for audio data streaming, without using
-  `postMessage`.
-- `src/param.ts`: wrapper for parameter changes, allowing to send pairs of index
-  and value without using `postMessage`.
-
-## Examples and use-cases
-
-<https://ringbuf-js.netlify.app/> is a deployment of the examples in this
-repository with a web server that answers with the right headers for this
-directory, and allows the example to work. More details available at [Planned
-changes to shared memory
-](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer/Planned_changes).
-
-Those examples work in browsers that support both the `AudioWorklet`, and
-`SharedArrayBuffer`.
-
-While most real-time audio work should happen on a real-time thread (which means
-inside the `AudioWorkletGlobaleScope` on the Web), sending (resp. receiving) audio
-to (from) a non-real-time thread is useful:
-
-- Decoding a audio codecs that browsers don't support natively in a web worker,
-  sending the PCM to an `AudioWorklet` (no need to fiddle with
-  `AudioBufferSourceNode`, etc.)
-- Conversely, recording the output of an `AudioContext` using an
-  `AudioWorkletNode` with a very high degree of reliability and extreme
-  flexibility, possibly using Web Codecs or a WASM based solution for the
-  encoding, and then sending the result to the network or storing it locally.
-- Implementing emulators for (e.g.) old consoles that only had one execution
-  thread and did everything on the same CPU
-- Porting code that is using a push-style audio API (`SDL_QueueAudio`) without
-  having to refactor everything.
-- Implement off-main-thread off-real-time-thread audio analysis (streaming the
-  real-time audio data to a web worker, visualizing it using an
-  `OffscreenCanvas`, shielding the audio processing and visualization from main
-  thread load)
-
-## Run locally
-
-> `cd public; node ../server.mjs`
-
-This is a simple web server that sets the right headers to use
-`SharedArrayBuffer` (see [Planned changes to shared memory
-](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer/Planned_changes)
-on MDN).
-
-## Contribute
-
-Please do (just open an issue or send a PR).
-
-> make build
-
-allows running the build step and copying the file to allow the example to work.
-
-> make doc
-
-allows rebuilding the documentation.
-
-## Performance Benchmarks
-
-As of version `0.4.0`, the whole codebase has been ported to TypeScript, tooling
-has been modernized and dependencies were updated. The package is now also
-marked as side-effect free, which allows bundlers to tree-shake the code for
-unused symbols when imported.
-
-Alongside these updates, two performance optimizations were introduced:
-
-- `_copy` has been optimized by a loop factor of 16.
-[`bench`](bench/deinterleave-bench.html)
-- `deinterleave` has been optimized by unrolling the loop with a factor of 4.
-[`bench`](bench/copy-bench.html)
-
-Early, and limited test results have shown a substantial performance improvement
-in buffer copying by **~325%**. For ongoing monitoring in engine behaviour,
-benchmarks have been added for independent verification of the results.
-
-## Compatibility
-
-This needs the `SharedArrayBuffer`, so a couple of HTTP headers might need to be
-set on the web server serving the page.
-
-```
-Cross-Origin-Opener-Policy: same-origin
-Cross-Origin-Embedder-Policy: require-corp
+```sh
+npm install simple-ringbuf.js
 ```
 
-As of 2023-05-25, the following browsers are compatible:
+## Usage
 
-- Firefox Desktop all current versions including current ESR
-- Firefox for Android all current versions
-- Chrome Desktop and Chromium-based browsers (for a long time)
-- Chrome for Android
-- Safari
+```js
+import { RingBuffer } from "simple-ringbuf.js";
+
+const ringBuffer = new RingBuffer({
+	type: Uint32Array,
+	buffer: RingBuffer.getStorageForCapacity(4, Uint32Array),
+});
+
+const written = ringBuffer.push(new Uint32Array([1, 2, 3]));
+
+const output = new Uint32Array(3);
+const read = ringBuffer.pop(output);
+
+console.log(written); // 3
+console.log(read); // 3
+console.log([...output]); // [1, 2, 3]
+```
+
+## API
+
+### `RingBuffer.getStorageForCapacity(capacity, type)`
+
+Allocates an `ArrayBuffer` large enough for `capacity` usable elements of the given typed-array constructor.
+
+The implementation reserves one extra slot internally so it can distinguish a full buffer from an empty buffer.
+
+### `new RingBuffer({ type, buffer })`
+
+Creates a ring buffer over an existing `ArrayBuffer`.
+
+`type` must be one of the standard typed-array constructors, such as `Uint8Array`, `Uint32Array`, `Float32Array`, or `Float64Array`.
+
+### `push(elements, length?, offset?)`
+
+Writes elements into the ring buffer and returns the number of elements written.
+
+If there is not enough room, only the available space is written. `length` limits how many elements are read from `elements`; `offset` chooses the starting index in `elements`.
+
+### `pop(elements, length?, offset?)`
+
+Reads elements from the ring buffer into `elements` and returns the number of elements read.
+
+If there is not enough data, only the available data is read. `length` limits how many elements are written; `offset` chooses the starting index in `elements`.
+
+### State
+
+- `capacity()` returns the usable capacity.
+- `availableRead` returns the number of elements available to read.
+- `availableWrite` returns the number of elements available to write.
+- `isEmpty` is `true` when no elements are available to read.
+- `isFull` is `true` when no elements are available to write.
+- `clear()` marks the buffer empty without clearing the underlying storage.
+
+## Scope
+
+This package is useful when you need a compact FIFO queue over typed arrays in one JavaScript thread.
+
+It is not a replacement for the original `ringbuf.js` if you need:
+
+- communication between workers or AudioWorklets;
+- `SharedArrayBuffer` support;
+- wait-free producer/consumer behavior across threads;
+- Web Audio helper utilities.
+
+Use the original [`ringbuf.js`](https://github.com/padenot/ringbuf.js) for those cases.
+
+## Development
+
+```sh
+npm test
+npm run build
+npm run lint
+npm run format
+```
 
 ## License
 
-Mozilla Public License 2.0
+This project is licensed under the Mozilla Public License 2.0.
+
+This project is a fork of [`ringbuf.js`](https://github.com/padenot/ringbuf.js) by Paul Adenot. Modifications in this fork are also distributed under the Mozilla Public License 2.0.
