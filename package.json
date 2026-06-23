@@ -1,5 +1,5 @@
 {
-  "name": "simple-ringbuf.js",
+  "name": "@haathie/simple-ringbuf.js",
   "version": "0.0.0",
   "description": "Simple ring buffer implementation",
   "keywords": [
