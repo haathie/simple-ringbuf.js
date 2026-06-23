@@ -14,5 +14,6 @@
 	},
 	"env": {
 		"builtin": true
-	}
+	},
+	"ignorePatterns": ["lib"]
 }
