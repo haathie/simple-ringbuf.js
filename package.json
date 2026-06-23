@@ -1,48 +1,48 @@
 {
-  "name": "@haathie/simple-ringbuf.js",
-  "version": "0.0.1",
-  "description": "Simple ring buffer implementation",
-  "keywords": [
-    "ring buffer",
-    "single-consumer",
-    "single-producer"
-  ],
-  "license": "MPL-2.0",
-  "author": "Paul Adenot <padenot@mozilla.com>",
-  "contributors": [
-    "Ammar Sura <ammarsura@gmail.com>"
-  ],
-  "repository": "@haathie/ringbuf.js",
-  "files": [
-    "dist"
-  ],
-  "type": "module",
-  "sideEffects": false,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
-  },
-  "scripts": {
-    "build": "tsc",
-    "lint": "oxlint -c .oxlintrc.json",
-    "format": "oxfmt -c .oxfmtrc.json",
-    "test": "node --test src/tests/test.ts"
-  },
-  "devDependencies": {
-    "@types/node": "^24.13.2",
-    "oxfmt": "^0.56.0",
-    "oxlint": "^1.71.0",
-    "typescript": "^5.7.3"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
-  "engines": {
-    "node": ">=24",
-    "npm": ">=9"
-  }
+	"name": "@haathie/simple-ringbuf.js",
+	"version": "0.0.1",
+	"description": "Simple ring buffer implementation",
+	"keywords": [
+		"ring buffer",
+		"single-consumer",
+		"single-producer"
+	],
+	"license": "MPL-2.0",
+	"author": "Paul Adenot <padenot@mozilla.com>",
+	"contributors": [
+		"Ammar Sura <ammarsura@gmail.com>"
+	],
+	"repository": "@haathie/ringbuf.js",
+	"files": [
+		"dist"
+	],
+	"type": "module",
+	"sideEffects": false,
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		}
+	},
+	"publishConfig": {
+		"registry": "https://npm.pkg.github.com"
+	},
+	"scripts": {
+		"build": "tsc",
+		"lint": "oxlint -c .oxlintrc.json",
+		"format": "oxfmt -c .oxfmtrc.json",
+		"test": "node --test src/tests/test.ts"
+	},
+	"devDependencies": {
+		"@types/node": "^24.13.2",
+		"oxfmt": "^0.56.0",
+		"oxlint": "^1.71.0",
+		"typescript": "^5.7.3"
+	},
+	"engines": {
+		"node": ">=24",
+		"npm": ">=9"
+	}
 }
