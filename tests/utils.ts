@@ -1,5 +1,5 @@
-import assert from "assert";
-import type { TypedArray } from "../types";
+import assert from "node:assert/strict";
+import type { TypedArray } from "../src/types.ts";
 
 export class SeededPRNG {
 	#next: () => number;

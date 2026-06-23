@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { TypedArray, TypedArrayConstructor } from "../types";
+import type { TypedArray, TypedArrayConstructor } from "../src/types.ts";
 import { SequenceGenerator, SequenceVerifier, SeededPRNG } from "./utils.ts";
-import { RingBuffer } from "../ringbuf.ts";
+import { RingBuffer } from "../src/ringbuf.ts";
 
 type RingBufferInstance = InstanceType<typeof RingBuffer>;
 
