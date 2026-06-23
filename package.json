@@ -1,6 +1,6 @@
 {
   "name": "@haathie/simple-ringbuf.js",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Simple ring buffer implementation",
   "keywords": [
     "ring buffer",
@@ -37,6 +37,9 @@
     "oxfmt": "^0.56.0",
     "oxlint": "^1.71.0",
     "typescript": "^5.7.3"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   },
   "engines": {
     "node": ">=24",
